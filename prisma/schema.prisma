@@ -17,13 +17,67 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model messages {
-  text   String
-  author String
+model User {
+  profile String
+  name    String
+
+  // xata fields
+  xata_updatedat DateTime        @default(now()) @db.Timestamptz(6)
+  xata_id        String          @unique(map: "_pgroll_users_xata_id_key") @default(dbgenerated("('rec_'::text || (xata_private.xid())::text)"))
+  xata_version   Int             @default(0)
+  xata_createdat DateTime        @default(now()) @db.Timestamptz(6)
+  events         events[]
+  registrations  registrations[]
+}
+
+model category {
+  id     Int      @id @default(autoincrement())
+  name   String   @unique
+  events events[]
 
   // xata fields
   xata_updatedat DateTime @default(now()) @db.Timestamptz(6)
-  xata_id        String   @unique(map: "_pgroll_users_xata_id_key") @default(dbgenerated("('rec_'::text || (xata_private.xid())::text)"))
+  xata_id        String   @unique(map: "_pgroll_category_xata_id_key") @default(dbgenerated("('rec_'::text || (xata_private.xid())::text)"))
   xata_version   Int      @default(0)
   xata_createdat DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model events {
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String?
+  location      String?
+  createdAt     DateTime?       @default(now()) @db.Timestamptz(6)
+  imageUrl      String
+  startDateTime DateTime?       @default(now()) @db.Timestamptz(6)
+  endDateTime   DateTime?       @default(now()) @db.Timestamptz(6)
+  url           String?
+  categoryId    Int?
+  organizerId   String?
+  slug          String?         @unique
+  category      category?       @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  User          User?           @relation(fields: [organizerId], references: [xata_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_organizer")
+  registrations registrations[]
+
+  // xata fields
+  xata_updatedat DateTime @default(now()) @db.Timestamptz(6)
+  xata_id        String   @unique(map: "_pgroll_events_xata_id_key") @default(dbgenerated("('rec_'::text || (xata_private.xid())::text)"))
+  xata_version   Int      @default(0)
+  xata_createdat DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model registrations {
+  eventId     Int
+  userId      String
+  description String?
+  events      events  @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_eventid")
+  User        User    @relation(fields: [userId], references: [xata_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_userid")
+
+  // xata fields
+  xata_updatedat DateTime @default(now()) @db.Timestamptz(6)
+  xata_id        String   @unique(map: "_pgroll_registrations_xata_id_key") @default(dbgenerated("('rec_'::text || (xata_private.xid())::text)"))
+  xata_version   Int      @default(0)
+  xata_createdat DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([eventId, userId])
 }
